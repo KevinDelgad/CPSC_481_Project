@@ -38,7 +38,6 @@ def checkFullImage():
         return True
     return False
 
-
 def clearPhotos():
     for num in range(6):
         os.remove("images/image" + str(num) + ".jpg")
@@ -88,8 +87,16 @@ def image():
         file_path = imageNaming()
         with open(file_path, 'wb') as out:
             out.write(bytesOfImage)
-
         if(checkFullImage()):
             getColors()
-            return facecolors
+            tempcolors = dict(facecolors)
+            facecolors.update({"front": [],
+                "top": [],
+                "back": [],
+                "bottom": [],
+                "left": [],
+                "right": []})
+            print(facecolors)
+            print(tempcolors)
+            return jsonify(tempcolors)
         return "Image read"
