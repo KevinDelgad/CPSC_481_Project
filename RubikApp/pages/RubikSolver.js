@@ -24,6 +24,7 @@ export default PastAttempt = () => {
   const [saveImageLeft, setSaveImageLeft] = React.useState('Left');
   const [saveImageRight, setSaveImageRight] = React.useState('Right');
   const [saveImageBottom, setSaveImageBottom] = React.useState('Bottom');
+  const [curFaceIndex, setCurFaceIndex] = React.useState(0); 
 
   const [imageValues, setImageValues] = React.useState({
     front: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
@@ -103,7 +104,10 @@ export default PastAttempt = () => {
   ]);
 
   React.useEffect(() => {
-    
+    console.log(typeof(imageValues))
+    setCurMode('manual')
+
+
   }, [imageValues]);
 
   toServer = async mediaFile => {
@@ -116,12 +120,35 @@ export default PastAttempt = () => {
       httpMethod: 'POST',
       uploadType: FS.FileSystemUploadType.BINARY_CONTENT,
     });
-
-    console.log(response.headers);
-    console.log(response.body);
-
-    setImageValues(response.body);
+    
+    if(response.body !== "Image read"){
+      setImageValues(JSON.parse(response.body));
+    }
   };
+
+  const solveCube = async () =>{
+    const url = 'http://192.168.1.234:5000/steps';
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ imageValues }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      // Handle the response from the server if needed
+      const responseData = await response.json();
+      console.log(responseData);
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error.message);
+    }
+  }
 
   const checkImageIsValid = val => {
     return val.length > 10;
@@ -277,6 +304,34 @@ export default PastAttempt = () => {
     );
   };
 
+  const getNextFace = () =>{
+    const imageValuesKeys = Object.keys(imageValues)
+    const tempIndex = curFaceIndex + 1;
+    if(tempIndex === imageValuesKeys.length){
+      setCurFace(imageValuesKeys[0])
+      setCurFaceIndex(0)
+    }else{
+      setCurFaceIndex(tempIndex)
+      setCurFace(imageValuesKeys[tempIndex])
+    }
+
+  }
+
+  const getPrevFace = () => {
+    const imageValuesKeys = Object.keys(imageValues);
+    const tempIndex = curFaceIndex - 1;
+  
+    if (tempIndex === -1) {
+      const lastKey = imageValuesKeys[imageValuesKeys.length - 1];
+      setCurFace(lastKey);
+      setCurFaceIndex(imageValuesKeys.length - 1);
+    } else {
+      setCurFaceIndex(tempIndex);
+      setCurFace(imageValuesKeys[tempIndex]);
+    }
+  };
+  
+
   return (
     <View style={styles.container}>
       {curMode === 'image' && (
@@ -318,7 +373,10 @@ export default PastAttempt = () => {
 
       {curMode !== 'image' && (
         <>
+          <Text>Current Face: {curFace}</Text>
           <GridFace />
+          <Button title='Next Face' onPress={() => getNextFace()}/>
+          <Button title='Prev Face' onPress={() => getPrevFace()}/>
         </>
       )}
 
@@ -329,6 +387,8 @@ export default PastAttempt = () => {
           curMode === 'image' ? setCurMode('manual') : setCurMode('image');
         }}
       />
+
+      <Button title='Solve' onPress={() => solveCube()}/>
 
       <StatusBar style="auto" />
     </View>

@@ -14,6 +14,17 @@ export default rubikStyle = StyleSheet.create({
       verticalSpace: {
         height: 10, // Add vertical space between the two buttons
       },
+      rubikFaceInput: {
+        height: "60%",
+        width: '70%',
+        backgroundColor : "red"
+      },
+      rubikLayout: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-evenly',
+        alignItems: 'center'
+      }
 
 
 });
