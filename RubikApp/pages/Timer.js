@@ -6,25 +6,34 @@ export default Timer = () => {
   const [counter, setCounter] = React.useState(0);
   const [second, setSecond] = React.useState(0);
   const [minute, setMinute] = React.useState(0);
+  const startTimeRef = React.useRef(0);
+  const requestAnimationFrameRef = React.useRef();
   const [start, setStart] = React.useState(false);
-
+  
+  const updateTimer = () => {
+    const currentTime = performance.now();
+    const elapsedMilliseconds = currentTime - startTimeRef.current;
+  
+    if (start) {
+      setCounter(Math.floor(elapsedMilliseconds % 1000));
+      setSecond(Math.floor(elapsedMilliseconds / 1000) % 60);
+      setMinute(Math.floor(elapsedMilliseconds / (1000 * 60)));
+  
+      requestAnimationFrameRef.current = requestAnimationFrame(updateTimer);
+    }
+  };
+  
   React.useEffect(() => {
     if (start) {
-      //Issue: Timer is slow due to SetTimeout has a min delay of 4 milliseconds
-      //Band-aid solution : set counter value to increased number
-
-      if (counter < 98) {
-        setTimeout(() => setCounter(counter + 1.66666666666), 1);
-      } else if (second < 59) {
-        setCounter(0);
-        setSecond(second + 1);
-      } else {
-        setCounter(0);
-        setSecond(0);
-        setMinute(minute + 1);
-      }
+      startTimeRef.current = performance.now();
+      requestAnimationFrameRef.current = requestAnimationFrame(updateTimer);
+    }else{
+      setTimeout(() => {
+        cancelAnimationFrame(requestAnimationFrameRef.current);
+      }, 0);
     }
-  }, [counter, start]);
+  }, [start]);
+  
 
   const context = React.useContext(AppContext);
 
@@ -82,7 +91,7 @@ export default Timer = () => {
           {minute < 10 ? '0' : null}
           {minute} : {second < 10 ? '0' : null}
           {second} : {Math.round(counter) < 10 ? '0' : null}
-          {Math.round(counter)}
+          {Math.round(counter/10)}
         </Text>
       </View>
       <View style={{flex: 1, justifyContent:'space-around'}}>
