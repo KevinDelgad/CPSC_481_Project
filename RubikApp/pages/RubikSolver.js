@@ -8,6 +8,7 @@ import {
   TouchableHighlight,
   TouchableWithoutFeedback,
   FlatList,
+  Modal
 } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import * as React from 'react';
@@ -16,7 +17,9 @@ import * as FS from 'expo-file-system';
 import RubikStyle from '../styles/RubikStyle';
 
 export default PastAttempt = () => {
-  const [curMode, setCurMode] = React.useState('Image');
+  const [curMode, setCurMode] = React.useState('image');
+
+  const [firstLoad, setFirstLoad] = React.useState(true);
 
   const [saveImageFront, setSaveImageFront] = React.useState('Front');
   const [saveImageTop, setSaveImageTop] = React.useState('Top');
@@ -25,19 +28,24 @@ export default PastAttempt = () => {
   const [saveImageRight, setSaveImageRight] = React.useState('Right');
   const [saveImageBottom, setSaveImageBottom] = React.useState('Bottom');
   const [curFaceIndex, setCurFaceIndex] = React.useState(0); 
+  const [stepIndex, setStepIndex] = React.useState(0);
 
   const [imageValues, setImageValues] = React.useState({
-    front: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
-    top: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
-    back: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
-    bottom: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
-    left: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
-    right: ['grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey', 'grey'],
+    front: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red'],
+    top: ['green', 'green', 'green', 'green', 'green', 'green', 'green', 'green', 'green'],
+    back: ['yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow'],
+    bottom: ['orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange'],
+    left: ['blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue'],
+    right: ['white', 'white', 'white', 'white', 'white', 'white', 'white', 'white', 'white'],
   });
 
   const [curFace, setCurFace] = React.useState('front');
 
   const [uploadPossible, setUploadPossible] = React.useState(true);
+
+  const [solvedSteps, setSolvedSteps] = React.useState(null);
+
+  const [viewSteps, setViewSteps] = React.useState(false);
 
   const takeImage = async setRubikSide => {
     const image = await ImageCropPicker.openCamera({
@@ -104,11 +112,20 @@ export default PastAttempt = () => {
   ]);
 
   React.useEffect(() => {
-    console.log(typeof(imageValues))
-    setCurMode('manual')
-
-
+    if(!firstLoad){
+      setCurMode('manual')
+    }else{
+      setFirstLoad(false);
+    }
   }, [imageValues]);
+
+  React.useEffect ( () => {
+    if(!firstLoad){
+      setViewSteps(true);
+    }else{
+      setFirstLoad(false);
+    }
+  }, [solvedSteps])
 
   toServer = async mediaFile => {
     (route = '/image'), (content_type = 'image/jpeg');
@@ -144,7 +161,7 @@ export default PastAttempt = () => {
   
       // Handle the response from the server if needed
       const responseData = await response.json();
-      console.log(responseData);
+      setSolvedSteps(responseData["converted_moves"])
     } catch (error) {
       console.error('There was a problem with the fetch operation:', error.message);
     }
@@ -330,6 +347,10 @@ export default PastAttempt = () => {
       setCurFace(imageValuesKeys[tempIndex]);
     }
   };
+
+  const getNextStep = () =>{
+    console.log(Array.isArray(solvedSteps))
+  }
   
 
   return (
@@ -389,6 +410,16 @@ export default PastAttempt = () => {
       />
 
       <Button title='Solve' onPress={() => solveCube()}/>
+
+      <Modal visible = {viewSteps} animationType='slide'>
+        <View style={styles.container}>
+          <Text>{solvedSteps !== null ? solvedSteps[stepIndex]: "Placeholder"}</Text>
+          <Button title='Next' onPress={() => (stepIndex + 1 < solvedSteps.length ? setStepIndex(stepIndex + 1): null)}/>
+          <Button title='Prev' onPress={() => (stepIndex - 1 >= 0 ? setStepIndex(stepIndex - 1) : null)}/>
+          <Button title='Finish' onPress={() => {setViewSteps(false)}}/>
+
+        </View>
+      </Modal>
 
       <StatusBar style="auto" />
     </View>
