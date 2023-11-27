@@ -8,7 +8,8 @@ import {
   TouchableHighlight,
   TouchableWithoutFeedback,
   FlatList,
-  Modal
+  Modal,
+  TextInput
 } from 'react-native';
 import ImageCropPicker from 'react-native-image-crop-picker';
 import * as React from 'react';
@@ -29,6 +30,8 @@ export default PastAttempt = () => {
   const [saveImageBottom, setSaveImageBottom] = React.useState('Bottom');
   const [curFaceIndex, setCurFaceIndex] = React.useState(0); 
   const [stepIndex, setStepIndex] = React.useState(0);
+  const [apiValue, onChangeText] = React.useState('http://192.168.1.234:5000/');
+  const [changeSettings, setChangeSettings] = React.useState(false);
 
   const [imageValues, setImageValues] = React.useState({
     front: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red'],
@@ -111,6 +114,10 @@ export default PastAttempt = () => {
     saveImageBottom,
   ]);
 
+  React.useEffect ( () =>{
+    console.log(apiValue)
+  }, [apiValue])
+
   React.useEffect(() => {
     if(!firstLoad){
       setCurMode('manual')
@@ -129,7 +136,7 @@ export default PastAttempt = () => {
 
   toServer = async mediaFile => {
     (route = '/image'), (content_type = 'image/jpeg');
-    url = 'http://192.168.1.234:5000/image';
+    url = apiValue + 'image';
     let response = await FS.uploadAsync(url, mediaFile.uri, {
       headers: {
         'content-type': content_type,
@@ -144,7 +151,7 @@ export default PastAttempt = () => {
   };
 
   const solveCube = async () =>{
-    const url = 'http://192.168.1.234:5000/steps';
+    const url = apiValue + 'steps';
 
     try {
       const response = await fetch(url, {
@@ -409,7 +416,19 @@ export default PastAttempt = () => {
         }}
       />
 
+      <Button title='Api Settings' onPress={() => setChangeSettings(!changeSettings)}/>
+
       <Button title='Solve' onPress={() => solveCube()}/>
+
+      <Modal visible = {changeSettings} animationType='false'>
+        <TextInput
+          value={apiValue}
+          onChangeText={onChangeText}
+        />
+
+        <Button title='Complete' onPress={() => setChangeSettings(false)}/>
+
+      </Modal>
 
       <Modal visible = {viewSteps} animationType='slide'>
         <View style={styles.container}>
