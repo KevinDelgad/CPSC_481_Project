@@ -6,9 +6,8 @@ import os
 import sys
 import cv2
 import numpy as np
-from rubik.cube import Cube
-from rubik.solve import Solver
 
+from twophase import solve
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -92,91 +91,79 @@ def image():
         if(checkFullImage()):
             getColors()
             tempcolors = dict(facecolors)
-            facecolors.update({"front": [],
-                "top": [],
-                "back": [],
-                "bottom": [],
-                "left": [],
-                "right": []})
+            facecolors.update({"Front": [],
+                "Up": [],
+                "Back": [],
+                "Down": [],
+                "Left": [],
+                "Right": []})
             print(facecolors)
             print(tempcolors)
             return jsonify(tempcolors)
         return "Image read"
 
+def construct_cube_state_str(cube_state_dict):
+    faces = ["Up", "Right", "Front", "Down", "Left", "Back"]
+    cube_state_str = ""
 
-def fetch_cube_state_as_str(json_orientation):
-    string_orientation = ""
-    other_faces = ["left", "front", "right", "back"]
-    
-    start_index = 0
-    end_index = 3
+    face_color_mapping = {}
+    for face in faces:
+        middle_color = cube_state_dict[face][4]
+        face_color_mapping[middle_color[0]] = face[0]
 
-    for square in json_orientation["top"]:
-        string_orientation += square[0].upper()
+    # Iterating through the faces in the standard Rubix cube layout order
+    for face in faces:
+        # Grabbing the first letter from each square and inserting it into the string
+        for square in cube_state_dict[face]:
+            cube_state_str += face_color_mapping[square[0]]
 
-    while (end_index <= 9):
-        for face in other_faces:
-            color_set = json_orientation[face][start_index:end_index]
-            for color in color_set:
-                string_orientation += color[0].upper()
-        
-        start_index += 3
-        end_index += 3
-    
-    for square in json_orientation["bottom"]:
-        string_orientation += square[0].upper()
+    return cube_state_str
 
-    return string_orientation
-
-def convert_solver_moves(solver_moves):
-    legend = {
-        "U": "Turn the upper face clockwise (90 degrees)",
-        "Ui": "Turn the upper face counterclockwise (90 degrees)",
-        "B": "Turn the back face clockwise (90 degrees)",
-        "Bi": "Turnthe back face counterclockwise (90 degrees)",
-        "E": "Turn the Equatorial slice clockwise (90 degrees)",
-        "Ei": "Turn the Equatorial slice counterclockwise (90 degrees)",
-        "L": "Turn the Left face clockwise (90 degrees)",
-        "Li": "Turn the Left face counterclockwise (90 degrees)",
-        "R": "Turn the Right face clockwise (90 degrees)",
-        "Ri": "Turn the Right face counterclockwise (90 degrees)",
-        "D": "Turn the Down face clockwise (90 degrees)",
-        "Di": "Turn the Down face counterclockwise (90 degrees)",
-        "F": "Turn the Front face clockwise (90 degrees)",
-        "Fi": "Turn the Front face counterclockwise (90 degrees)",
-        "S": "Turn the middle vertical slice clockwise (90 degrees)",
-        "Si": "Turn the middle vertical slice counterclockwise (90 degrees)",
-        "X": "Rotate the entire cube around the X-axis clockwise (viewed from the front)",
-        "Xi": "Rotate the entire cube around the X-axis counterclockwise (viewed from the front)",
-        "Z": "Rotate the entire cube around the Z-axis clockwise (viewed from the front)",
-        "Zi": "Rotate the entire cube around the Z-axis counterclockwise (viewed from the front)"
+def construct_detailed_steps(steps):
+    detailed_steps = []
+    move_mapping = {
+        "F": "90 degree clockwise turn of Front face",
+        "R": "90 degree clockwise turn of Right face",
+        "U": "90 degree clockwise turn of Upper face",
+        "L": "90 degree clockwise turn of Left face",
+        "B": "90 degree clockwise turn of Back face",
+        "D": "90 degree clockwise turn of Down face",
+        "F'": "90 degree counterclockwise turn of Front face",
+        "R'": "90 degree counterclockwise turn of Right face",
+        "U'": "90 degree counterclockwise turn of Upper face",
+        "L'": "90 degree counterclockwise turn of Left face",
+        "B'": "90 degree counterclockwise turn of Back face",
+        "D'": "90 degree counterclockwise turn of Down face",
+        "F2": "180 degree turn of Front face",
+        "R2": "180 degree turn of Right face",
+        "U2": "180 degree turn of Upper face",
+        "L2": "180 degree turn of Left face",
+        "B2": "180 degree turn of Back face",
+        "D2": "180 degree turn of Down face"
     }
 
-    converted_moves = []
-
-    for move in solver_moves:
-        converted_moves.append(legend[move])
+    for step in steps:
+        detailed_steps.append(move_mapping[step])
     
-    return converted_moves
+    return detailed_steps
 
 @app.route("/steps", methods=['GET', 'POST'])
 def steps():
     if request.method == "POST":
-        json_orientation = request.json["imageValues"]
-        print(json_orientation)
-        string_orientation = fetch_cube_state_as_str(json_orientation)
-
-        cube = Cube(string_orientation)
-        print(cube)
-        solver = Solver(cube)
-        solver.solve()
-
-        raw_moves = solver.moves
-        converted_moves = convert_solver_moves(raw_moves)
-
-        steps = {
-            "raw_moves": raw_moves,
-            "converted_moves": converted_moves
+        cube_state_dict = request.json["imageValues"]
+        cube_state_str = construct_cube_state_str(cube_state_dict)
+        
+        solution = {
+            "steps": [],
+            "detailed_steps": []
         }
 
-        return jsonify(steps)
+        solution["steps"] = solve(cube_state_str).split()
+        solution["detailed_steps"] = construct_detailed_steps(solution["steps"])
+        
+        solution["steps"].append("Finished")
+        solution["detailed_steps"].append("Finished")
+
+        print(solution)
+
+        return jsonify(solution)

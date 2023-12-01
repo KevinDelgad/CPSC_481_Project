@@ -34,15 +34,15 @@ export default PastAttempt = () => {
   const [changeSettings, setChangeSettings] = React.useState(false);
 
   const [imageValues, setImageValues] = React.useState({
-    front: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red'],
-    top: ['green', 'green', 'green', 'green', 'green', 'green', 'green', 'green', 'green'],
-    back: ['yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow'],
-    bottom: ['orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange'],
-    left: ['blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue'],
-    right: ['white', 'white', 'white', 'white', 'white', 'white', 'white', 'white', 'white'],
+    Front: ['red', 'red', 'red', 'red', 'red', 'red', 'red', 'red', 'red'],
+    Up: ['green', 'green', 'green', 'green', 'green', 'green', 'green', 'green', 'green'],
+    Back: ['yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow', 'yellow'],
+    Down: ['orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange', 'orange'],
+    Left: ['blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue', 'blue'],
+    Right: ['white', 'white', 'white', 'white', 'white', 'white', 'white', 'white', 'white'],
   });
 
-  const [curFace, setCurFace] = React.useState('front');
+  const [curFace, setCurFace] = React.useState('Front');
 
   const [uploadPossible, setUploadPossible] = React.useState(true);
 
@@ -168,7 +168,7 @@ export default PastAttempt = () => {
   
       // Handle the response from the server if needed
       const responseData = await response.json();
-      setSolvedSteps(responseData["converted_moves"])
+      setSolvedSteps(responseData["detailed_steps"])
     } catch (error) {
       console.error('There was a problem with the fetch operation:', error.message);
     }
